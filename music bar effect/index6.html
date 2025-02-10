@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Visualizer with Song Selection</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #111;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #visualizer-container {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            width: 90vw;
+            height: 250px;
+            position: relative;
+        }
+
+        .bar {
+            width: 6px;
+            background: linear-gradient(180deg, #ff0080, #ffcc00);
+            margin: 1px;
+            transition: height 0.05s linear;
+            border-radius: 3px;
+        }
+
+        #controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            border: none;
+            background: #ff0080;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #cc0066;
+        }
+
+        #song-title {
+            color: white;
+            font-size: 18px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="visualizer-container"></div>
+    <div id="song-title">Loading songs...</div>
+    <div id="controls">
+        <button id="prevButton">Previous</button>
+        <button id="playButton">Play</button>
+        <button id="nextButton">Next</button>
+    </div>
+
+    <script>
+        // List of songs (Assume files are in ./songs/)
+        const songs = [
+            "./songs/apexpredator.mp3",
+            "./songs/brat.mp3",
+            "./songs/error404.mp3",
+            "./songs/regularexpressions.mp3",
+            "./songs/shygal.mp3"
+        ];
+        let currentSongIndex = 0;
+        const songTitle = document.getElementById("song-title");
+
+        const audio = new Audio(songs[currentSongIndex]);
+        songTitle.textContent = songs[currentSongIndex].split("/").pop();
+
+        const visualizerContainer = document.getElementById('visualizer-container');
+        const playButton = document.getElementById('playButton');
+        const prevButton = document.getElementById('prevButton');
+        const nextButton = document.getElementById('nextButton');
+
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const analyser = audioContext.createAnalyser();
+        const source = audioContext.createMediaElementSource(audio);
+        source.connect(analyser);
+        analyser.connect(audioContext.destination);
+
+        analyser.fftSize = 512;
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+
+        const bars = [];
+        const numBars = 50;
+
+        function createBars() {
+            visualizerContainer.innerHTML = ""; // Clear previous bars
+            bars.length = 0;
+            for (let i = 0; i < numBars * 2; i++) {
+                const bar = document.createElement('div');
+                bar.classList.add('bar');
+                visualizerContainer.appendChild(bar);
+                bars.push(bar);
+            }
+        }
+
+        function updateBars() {
+            analyser.getByteFrequencyData(dataArray);
+
+            for (let i = 0; i < numBars; i++) {
+                let index = Math.floor(i * (bufferLength / numBars));
+                let value = dataArray[index];
+
+                let barHeight = Math.pow(value, 1.6) / 30;
+
+                bars[numBars - i - 1].style.height = `${barHeight}px`;
+                bars[numBars + i].style.height = `${barHeight}px`;
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            updateBars();
+        }
+
+        function togglePlay() {
+            if (audio.paused) {
+                audioContext.resume();
+                audio.play();
+                playButton.textContent = "Pause";
+            } else {
+                audio.pause();
+                playButton.textContent = "Play";
+            }
+        }
+
+        function changeSong(direction) {
+            if (direction === "next") {
+                currentSongIndex = (currentSongIndex + 1) % songs.length;
+            } else if (direction === "prev") {
+                currentSongIndex = (currentSongIndex - 1 + songs.length) % songs.length;
+            }
+
+            audio.src = songs[currentSongIndex];
+            songTitle.textContent = songs[currentSongIndex].split("/").pop();
+            audio.play();
+            playButton.textContent = "Pause";
+        }
+
+        playButton.addEventListener("click", togglePlay);
+        prevButton.addEventListener("click", () => changeSong("prev"));
+        nextButton.addEventListener("click", () => changeSong("next"));
+
+        createBars();
+        animate();
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mirrored Music Visualizer</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #111;
+        }
+
+        #container {
+            position: relative;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            background: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 4;
+        }
+
+        #visualizer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transform-origin: center;
+        }
+
+        .bar {
+            position: absolute;
+            width: 10px;
+            background-color: #00ff00;
+            border-radius: 2px;
+            transform-origin: bottom;
+            transition: all 0.1s ease;
+            z-index: 3;
+        }
+
+        .controls {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 16px;
+            color: white;
+        }
+
+        #playButton {
+            background-color: #00ff00;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="visualizer"></div>
+        <div id="playButton" class="controls">Play</div>
+    </div>
+
+    <script>
+        const audio = new Audio('Brat.mp3'); // Replace with your audio file URL
+        const visualizer = document.getElementById('visualizer');
+        const playButton = document.getElementById('playButton');
+
+        // Setup Web Audio API
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const analyser = audioContext.createAnalyser();
+        const source = audioContext.createMediaElementSource(audio);
+        source.connect(analyser);
+        analyser.connect(audioContext.destination);
+
+        analyser.fftSize = 256;
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+
+        const bars = [];
+        const numBars = 40;
+        const radius = 200;
+        const barWidth = 10;
+        let isPlaying = false;
+
+        function createBars() {
+            for (let i = 0; i < numBars; i++) {
+                const bar = document.createElement('div');
+                bar.classList.add('bar');
+                visualizer.appendChild(bar);
+                bars.push(bar);
+
+                // Create mirrored bars (on the opposite side)
+                const mirroredBar = document.createElement('div');
+                mirroredBar.classList.add('bar');
+                visualizer.appendChild(mirroredBar);
+                bars.push(mirroredBar);
+            }
+        }
+
+        function updateBars() {
+            analyser.getByteFrequencyData(dataArray);
+
+            // Update bars to visualize the audio data
+            for (let i = 0; i < numBars; i++) {
+                const barHeight = dataArray[i] * 2; // Scale the bar height
+                const angle = (i / numBars) * Math.PI; // Left half of the circle (0 to π)
+
+                // Calculate smooth scaling for metaball-like effect
+                const scale = 1 + Math.sin(barHeight * 0.1) * 0.5;
+
+                // Update bar on the left half (positions on the left side of the circle)
+                bars[i].style.transform = `translate(-50%, -50%) rotate(${(i * 180 / numBars)}deg) translateY(-${radius}px) scale(${scale})`;
+                bars[i].style.height = `${barHeight}px`;
+
+                // Create the mirrored effect on the right half of the circle (positions on the right side of the circle)
+                const mirroredIndex = i + numBars; // Mirrored index for the second half of the bars
+                bars[mirroredIndex].style.transform = `translate(-50%, -50%) rotate(${(i * 180 / numBars) + 180}deg) translateY(-${radius}px) scale(${scale})`;
+                bars[mirroredIndex].style.height = `${barHeight}px`;
+            }
+        }
+
+        function startVisualizer() {
+            createBars();
+            audio.play();
+            audioContext.resume().then(() => {
+                isPlaying = true;
+                playButton.textContent = 'Pause';
+            });
+        }
+
+        function togglePlayPause() {
+            if (isPlaying) {
+                audio.pause();
+                isPlaying = false;
+                playButton.textContent = 'Play';
+            } else {
+                audio.play();
+                audioContext.resume().then(() => {
+                    isPlaying = true;
+                    playButton.textContent = 'Pause';
+                });
+            }
+        }
+
+        playButton.addEventListener('click', togglePlayPause);
+
+        function animate() {
+            if (isPlaying) {
+                updateBars();
+            }
+            requestAnimationFrame(animate);
+        }
+
+        // Create the bars before starting the animation
+        createBars();
+        animate();  // Start the animation loop
+    </script>
+</body>
+</html>

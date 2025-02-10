@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Floating Music Visualizer</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #111;
+            overflow: hidden;
+        }
+        .visualizer-container {
+            position: fixed;
+            top: 10%;
+            left: 50%;
+            transform: translate(-50%, -10%);
+            width: 200px;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(10px);
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <div class="visualizer-container">
+        <canvas id="visualizer"></canvas>
+    </div>
+    <audio id="audio" src="Brat.mp3" controls></audio>
+    <script>
+        const audio = document.getElementById("audio");
+        const canvas = document.getElementById("visualizer");
+        const ctx = canvas.getContext("2d");
+        canvas.width = 200;
+        canvas.height = 200;
+
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const analyser = audioContext.createAnalyser();
+        analyser.fftSize = 64;
+        const source = audioContext.createMediaElementSource(audio);
+        source.connect(analyser);
+        analyser.connect(audioContext.destination);
+
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+
+        function drawVisualizer() {
+            requestAnimationFrame(drawVisualizer);
+            analyser.getByteFrequencyData(dataArray);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const barWidth = (canvas.width / bufferLength) * 2;
+            let x = 0;
+            
+            ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
+            ctx.beginPath();
+            ctx.arc(canvas.width / 2, canvas.height / 2, canvas.width / 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            for (let i = 0; i < bufferLength; i++) {
+                const barHeight = dataArray[i] / 2;
+                ctx.fillStyle = `rgb(${barHeight + 100}, 50, 200)`;
+                ctx.fillRect(canvas.width / 2 - barWidth / 2 + x, canvas.height / 2 - barHeight / 2, barWidth, barHeight);
+                x += barWidth + 2;
+            }
+        }
+        
+        audio.onplay = () => audioContext.resume().then(drawVisualizer);
+    </script>
+</body>
+</html>

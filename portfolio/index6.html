@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Visualizer with Song Selection</title>
+    <link rel="stylesheet" href="./styles/styles.css">
+</head>
+<body>
+    <div class="toggle-button" onclick="toggleSidebar()">☰</div>
+    <div class="sidebar" id="sidebar">
+        <div class="bubble">Home</div>
+        <div class="bubble">About</div>
+        <div class="bubble">Services</div>
+        <div class="bubble">Portfolio</div>
+        <div class="bubble">Contact</div>
+    </div>
+    <div id="music-player">
+        <div id="visualizer-container1"></div>
+        <div id="visualizer-container2"></div>
+        <div id="song-title">Loading songs...</div>
+        <div id="controls">
+            <button id="prevButton"><--</button>
+            <button id="playButton">Play</button>
+            <button id="nextButton">--></button>
+        </div>
+    </div>
+    <canvas id="particleCanvas"></canvas>
+        
+    <div id="background">
+        <div class="background-top">
+            <div class="music-background"></div>
+            <div class="background-top-left background-triangle"></div>
+            <div class="background-top-right background-triangle"></div>
+        </div>
+        <div class="background-bottom">
+            <div class="background-bottom-left background-triangle"></div>
+            <div class="background-bottom-right background-triangle"></div>
+        </div>
+        </div>
+    </div>
+    <main class="content">
+        <header>
+            <h1>Welcome to My Digital Playground</h1>
+            <p>Cybersecurity Explorer | Game Developer | Digital Artist</p>
+        </header>
+        <section id="origin" class="origin">
+            <p>In the dim glow of a cluttered monitor, lines of code flickered like echoes of a mind that never truly rested. PandaInjection wasn’t just a programmer—he was a force of nature, a whirlwind of erratic genius bound by impulse and raw, unfiltered talent. Diagnosed with ADHD at an early age, he had spent his life teetering on the edge between brilliance and chaos, his mind a relentless storm of ideas, half-finished projects, and sleepless nights chasing impossible solutions.</p>
+            <p>But beneath the erratic energy and caffeine-fueled marathons lurked something darker. A past he never talked about. A mistake, a betrayal, a ghost in the machine that haunted his every keystroke. Once, he had built something—something dangerous. And now, whether he wanted to or not, he was the only one who could fix it… or destroy it for good.</p>
+        
+        </section>
+        <section id="about" class="about">
+            <h2>About</h2>
+            <p>Hello! I'm Panda Injection, a passionate individual with diverse interests and a keen focus on both technology and creativity. My journey has led me to explore the fascinating world of cybersecurity, where I am constantly learning about digital security, ethical hacking, and how to protect the integrity of information in our increasingly connected world. I love diving into complex problems and coming up with innovative solutions that keep systems and data safe.</p>
+            
+            <p>Apart from my tech interests, I also have a deep passion for music and the arts. I enjoy playing a variety of musical instruments, which range from guitar and piano to drums. The discipline and creativity involved in learning and performing music have always been a huge part of who I am. Whether it's composing new pieces or playing with friends, music brings joy and balance to my life.</p>
+            
+            <p>When I'm not immersed in technology or music, I love to express myself through drawing. Sketching and painting allow me to explore different artistic techniques and experiment with new ideas. I find that drawing is a wonderful way to relax, tap into my imagination, and communicate my thoughts visually. Whether I'm creating detailed landscapes or abstract designs, drawing has always been a cherished hobby.</p>
+            
+            <p>Overall, I strive to merge my technical expertise with my artistic abilities, always seeking new ways to challenge myself, grow, and contribute to the world around me. I'm excited for what the future holds as I continue to explore and learn across all of my interests!</p>
+            <p>Overall, I strive to merge my technical expertise with my artistic abilities, always seeking new ways to challenge myself, grow, and contribute to the world around me. I'm excited for what the future holds as I continue to explore and learn across all of my interests!</p>
+            
+            <p>Overall, I strive to merge my technical expertise with my artistic abilities, always seeking new ways to challenge myself, grow, and contribute to the world around me. I'm excited for what the future holds as I continue to explore and learn across all of my interests!</p>
+
+        </section>
+    </main>
+    <script>
+        const canvas = document.getElementById("particleCanvas");
+        const ctx = canvas.getContext("2d");
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        let particles = [];
+        const numParticles = 100;
+        const maxDistance = 150;
+        let mouse = { x: null, y: null, radius: 100 };
+        
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+                this.size = 3;
+            }
+            
+            move() {
+                let dx = this.x - mouse.x;
+                let dy = this.y - mouse.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < mouse.radius) {
+                    let angle = Math.atan2(dy, dx);
+                    let force = (mouse.radius - distance) / mouse.radius;
+                    let moveX = Math.cos(angle) * force * 5;
+                    let moveY = Math.sin(angle) * force * 5;
+                    this.vx += moveX;
+                    this.vy += moveY;
+                }
+                
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                this.vx *= 0.98; // Gradual velocity decay
+                this.vy *= 0.98;
+                
+                if (this.x <= 0 || this.x >= canvas.width) this.vx *= -1;
+                if (this.y <= 0 || this.y >= canvas.height) this.vy *= -1;
+            }
+            
+            draw() {
+                ctx.fillStyle = "#ff0080";
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < numParticles; i++) {
+                particles.push(new Particle());
+            }
+        }
+        
+        function drawConnections() {
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    let dx = particles[j].x - particles[i].x;
+                    let dy = particles[j].y - particles[i].y;
+                    let distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < maxDistance) {
+                        ctx.strokeStyle = `rgba(255, 0, 128, ${1 - distance / maxDistance})`;
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        
+                        let steps = 5;
+                        let prevX = particles[i].x;
+                        let prevY = particles[i].y;
+                        for (let k = 1; k < steps; k++) {
+                            let t = k / steps;
+                            let intermediateX = particles[i].x + dx * t + (Math.random() - 0.5) * 10;
+                            let intermediateY = particles[i].y + dy * t + (Math.random() - 0.5) * 10;
+                            ctx.lineTo(intermediateX, intermediateY);
+                            prevX = intermediateX;
+                            prevY = intermediateY;
+                        }
+                        
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+        
+        function animateCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            particles.forEach(particle => {
+                particle.move();
+                particle.draw();
+            });
+            
+            drawConnections();
+            requestAnimationFrame(animateCanvas);
+        }
+        
+        window.addEventListener("mousemove", (event) => {
+            mouse.x = event.x;
+            mouse.y = event.y;
+        });
+        
+        window.addEventListener("resize", () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initParticles();
+        });
+        
+        initParticles();
+        animateCanvas();
+    </script>
+
+    
+
+    <script>
+        const songs = [
+            "./songs/apexpredator.mp3",
+            "./songs/brat.mp3",
+            "./songs/error404.mp3",
+            "./songs/regularexpressions.mp3",
+            "./songs/shygal.mp3"
+        ];
+        let currentSongIndex = 0;
+        const songTitle = document.getElementById("song-title");
+
+        const audio = new Audio(songs[currentSongIndex]);
+        songTitle.textContent = songs[currentSongIndex].split("/").pop();
+
+        const visualizerContainer1 = document.getElementById('visualizer-container1');
+        const visualizerContainer2 = document.getElementById('visualizer-container2');
+
+        const playButton = document.getElementById('playButton');
+        const prevButton = document.getElementById('prevButton');
+        const nextButton = document.getElementById('nextButton');
+
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const analyser = audioContext.createAnalyser();
+        const source = audioContext.createMediaElementSource(audio);
+        source.connect(analyser);
+        analyser.connect(audioContext.destination);
+
+        analyser.fftSize = 512;
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+
+        const bars1 = [];
+        const bars2 = [];
+
+        const numBars = 70;
+
+        function createBars() {
+            visualizerContainer1.innerHTML = ""; // Clear previous bars
+            visualizerContainer2.innerHTML = ""; // Clear previous bars
+
+            bars1.length = 0;
+            bars2.length = 0;
+
+            for (let i = 0; i < numBars * 2; i++) {
+                const bar1 = document.createElement('div');
+                const bar2 = document.createElement('div');
+                bar1.classList.add('bar');
+                bar1.classList.zIndex = "-1";
+                bar2.classList.add('bar');
+                bar2.classList.zIndex = "-1";
+                visualizerContainer1.appendChild(bar1);
+                visualizerContainer2.appendChild(bar2);
+
+                bars1.push(bar1);
+                bars2.push(bar2);
+
+
+            }
+        }
+
+        function updateBars() {
+            analyser.getByteFrequencyData(dataArray);
+
+            for (let i = 0; i < numBars; i++) {
+                let index = Math.floor(i * (bufferLength / numBars));
+                let value = dataArray[index];
+
+                let barHeight = Math.pow(value, 1.6) / 30;
+
+                bars1[numBars - i - 1].style.height = `${barHeight}px`;
+                bars1[numBars + i].style.height = `${barHeight}px`;
+                bars2[numBars - i - 1].style.height = `${barHeight}px`;
+                bars2[numBars + i].style.height = `${barHeight}px`;
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            updateBars();
+        }
+
+        function togglePlay() {
+            if (audio.paused) {
+                audioContext.resume();
+                audio.play();
+                playButton.textContent = "Pause";
+            } else {
+                audio.pause();
+                playButton.textContent = "Play";
+            }
+        }
+
+        function changeSong(direction) {
+            if (direction === "next") {
+                currentSongIndex = (currentSongIndex + 1) % songs.length;
+            } else if (direction === "prev") {
+                currentSongIndex = (currentSongIndex - 1 + songs.length) % songs.length;
+            }
+
+            audio.src = songs[currentSongIndex];
+            songTitle.textContent = songs[currentSongIndex].split("/").pop();
+            audio.play();
+            playButton.textContent = "Pause";
+        }
+
+        playButton.addEventListener("click", togglePlay);
+        prevButton.addEventListener("click", () => changeSong("prev"));
+        nextButton.addEventListener("click", () => changeSong("next"));
+
+        createBars();
+        animate();
+    </script>
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById("sidebar");
+            if (sidebar.style.left === "10px") {
+                sidebar.style.left = "-100px";
+            } else {
+                sidebar.style.left = "10px";
+            }
+        }
+    </script>
+</body>
+</html>

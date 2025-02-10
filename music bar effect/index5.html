@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connected Symmetrical Music Visualizer</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #111;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #visualizer-container {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            width: 100vw;
+            height: 250px;
+            position: relative;
+        }
+
+        .bar {
+            width: 6px;
+            background: linear-gradient(180deg, #ff0080, #ffcc00);
+            margin: 0px;
+            transition: height 0.05s linear;
+            border-radius: 50%;
+        }
+
+        #playButton {
+            margin-top: 20px;
+            padding: 12px 24px;
+            font-size: 18px;
+            border: none;
+            background: #ff0080;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        #playButton:hover {
+            background: #cc0066;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="visualizer-container"></div>
+    <button id="playButton">Play</button>
+
+    <script>
+        const audio = new Audio('Brat.mp3'); // Replace with your actual file
+        const visualizerContainer = document.getElementById('visualizer-container');
+        const playButton = document.getElementById('playButton');
+
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const analyser = audioContext.createAnalyser();
+        const source = audioContext.createMediaElementSource(audio);
+        source.connect(analyser);
+        analyser.connect(audioContext.destination);
+
+        analyser.fftSize = 512; // Higher FFT size for more frequency detail
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+
+        const bars = [];
+        const numBars = 40; // Number of bars on one side (mirrored)
+
+        function createBars() {
+            for (let i = 0; i < numBars * 2; i++) { // Mirrored effect
+                const bar = document.createElement('div');
+                bar.classList.add('bar');
+                visualizerContainer.appendChild(bar);
+                bars.push(bar);
+            }
+        }
+
+        function updateBars() {
+            analyser.getByteFrequencyData(dataArray);
+
+            for (let i = 0; i < numBars; i++) {
+                let index = Math.floor(i * (bufferLength / numBars)); // Logarithmic frequency mapping
+                let value = dataArray[index];
+
+                // Apply non-linear scaling to emphasize bass frequencies
+                let barHeight = (Math.pow(value, 1.5) / 4); // More bass emphasis
+
+                bars[numBars - i - 1].style.height = `${barHeight}px`; // Left side
+                bars[numBars + i].style.height = `${barHeight}px`; // Mirrored right side
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            updateBars();
+        }
+
+        function togglePlay() {
+            if (audio.paused) {
+                audioContext.resume();
+                audio.play();
+                playButton.textContent = 'Pause';
+            } else {
+                audio.pause();
+                playButton.textContent = 'Play';
+            }
+        }
+
+        playButton.addEventListener('click', togglePlay);
+        createBars();
+        animate(); // Start animation loop
+    </script>
+
+</body>
+</html>

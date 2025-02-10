@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Visualizer</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #111;
+        }
+
+        #container {
+            position: relative;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #visualizer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transform-origin: center;
+        }
+
+        .bar {
+            position: absolute;
+            width: 4px;
+            background-color: #00ff00;
+            border-radius: 2px;
+            transform-origin: bottom;
+        }
+
+        .controls {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 16px;
+            color: white;
+        }
+
+        #playButton {
+            background-color: #00ff00;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="visualizer"></div>
+        <div id="playButton" class="controls">Play</div>
+    </div>
+
+    <script>
+        const audio = new Audio('Brat.mp3'); // Replace this with your audio file URL
+        const visualizer = document.getElementById('visualizer');
+        const playButton = document.getElementById('playButton');
+
+        // Setup Web Audio API
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const analyser = audioContext.createAnalyser();
+        const source = audioContext.createMediaElementSource(audio);
+        source.connect(analyser);
+        analyser.connect(audioContext.destination);
+
+        analyser.fftSize = 256;
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+
+        const bars = [];
+        const numBars = 40;
+        const radius = 200;
+        const barWidth = 4;
+        let isPlaying = false;
+
+        function createBars() {
+            for (let i = 0; i < numBars; i++) {
+                const bar = document.createElement('div');
+                bar.classList.add('bar');
+                visualizer.appendChild(bar);
+                bars.push(bar); // Ensure bars are populated correctly
+            }
+        }
+
+        function updateBars() {
+            analyser.getByteFrequencyData(dataArray);
+
+            for (let i = 0; i < numBars; i++) {
+                const barHeight = dataArray[i] * 2; // Scale the bar height
+                const angle = (i / numBars) * 2 * Math.PI;
+                const x = Math.cos(angle) * radius;
+                const y = Math.sin(angle) * radius;
+
+                // Position and rotate the bars
+                bars[i].style.transform = `translate(-50%, -50%) rotate(${(i * 360 / numBars)}deg)`;
+                bars[i].style.height = `${barHeight}px`;
+            }
+        }
+
+        function startVisualizer() {
+            createBars();
+            audio.play();
+            audioContext.resume().then(() => {
+                isPlaying = true;
+                playButton.textContent = 'Pause';
+            });
+        }
+
+        function togglePlayPause() {
+            if (isPlaying) {
+                audio.pause();
+                isPlaying = false;
+                playButton.textContent = 'Play';
+            } else {
+                audio.play();
+                audioContext.resume().then(() => {
+                    isPlaying = true;
+                    playButton.textContent = 'Pause';
+                });
+            }
+        }
+
+        playButton.addEventListener('click', togglePlayPause);
+
+        function animate() {
+            if (isPlaying) {
+                updateBars();
+            }
+            requestAnimationFrame(animate);
+        }
+
+        // Create the bars before starting the animation
+        createBars();
+        animate();  // Start the animation loop
+    </script>
+</body>
+</html>
